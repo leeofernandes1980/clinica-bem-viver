@@ -2,6 +2,8 @@
 
 Modelo de site com CRM e área do cliente para clínicas e consultórios. A **clínica é fictícia** e todos os dados são de demonstração: o projeto serve para mostrar o que um negócio sem site, ou sem um sistema de agendamento adequado, pode ter.
 
+**Demonstração:** [clinica-bem-viver.vercel.app](https://clinica-bem-viver.vercel.app). As áreas restritas são apresentadas mediante acesso de demonstração.
+
 ## O que o sistema faz
 
 **Site público**
