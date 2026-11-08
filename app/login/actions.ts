@@ -33,8 +33,13 @@ export async function enviarLink(
   });
 
   if (error) {
+    console.error("Falha ao enviar link de acesso:", error.code ?? error.status);
+
     return {
-      erro: "Não foi possível enviar o link. Aguarde alguns minutos e tente novamente.",
+      erro:
+        error.code === "over_email_send_rate_limit"
+          ? "Limite de envios atingido. Tente novamente em cerca de 1 hora."
+          : "Não foi possível enviar o link. Aguarde alguns minutos e tente novamente.",
     };
   }
 
