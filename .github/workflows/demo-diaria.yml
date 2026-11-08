@@ -1,0 +1,28 @@
+# Mantém a demonstração pronta para uso: atualiza as datas dos dados fictícios
+# e gera atividade no banco, o que evita a pausa do plano gratuito do Supabase.
+name: Atualizar demonstração
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # 04:00 em Manaus
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recriar-dados:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/seed-demo.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          DEMO_ADMIN_EMAIL: ${{ secrets.DEMO_ADMIN_EMAIL }}
+          DEMO_ADMIN_SENHA: ${{ secrets.DEMO_ADMIN_SENHA }}
+          DEMO_PACIENTE_EMAIL: ${{ secrets.DEMO_PACIENTE_EMAIL }}

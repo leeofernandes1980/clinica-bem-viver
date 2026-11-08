@@ -61,6 +61,8 @@ select id from auth.users where email = 'seu-email@exemplo.com';
 npm run demo:seed
 ```
 
+A rotina `.github/workflows/demo-diaria.yml` repete esse comando todo dia, para manter as datas atuais e o banco ativo. Ela usa os segredos do repositório e só recria os clientes fictícios listados no script.
+
 ## Antes de usar com uma clínica real
 
 Este projeto é uma demonstração. Para receber dados reais de pacientes, ainda é preciso:
@@ -68,5 +70,7 @@ Este projeto é uma demonstração. Para receber dados reais de pacientes, ainda
 - Tratar a LGPD com orientação jurídica: exames são dados sensíveis e exigem base legal, registro de acessos e prazo de guarda
 - Conferir as regras do conselho profissional sobre publicidade e depoimentos
 - Limitar a quantidade de envios do formulário público, contra spam
-- Usar um serviço de e-mail próprio, porque o envio padrão do Supabase tem limite baixo
+- Usar um serviço de e-mail próprio, porque o envio padrão do Supabase tem limite baixo e só atende contas autorizadas
+- Contratar planos adequados: o uso comercial exige sair do plano gratuito da Vercel, e o Supabase gratuito não tem backup automático
+- Desativar a rotina diária de dados de demonstração
 - Remover o `noindex` de `app/layout.tsx` e o aviso de clínica fictícia do rodapé

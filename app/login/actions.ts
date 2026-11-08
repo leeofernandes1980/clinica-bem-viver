@@ -35,10 +35,16 @@ export async function enviarLink(
   if (error) {
     console.error("Falha ao enviar link de acesso:", error.code ?? error.status);
 
+    if (error.code === "email_address_not_authorized") {
+      return {
+        erro: "Nesta demonstração, o link só é enviado a contas autorizadas. Peça um acesso de demonstração a quem apresentou o sistema.",
+      };
+    }
+
     return {
       erro:
         error.code === "over_email_send_rate_limit"
-          ? "Limite de envios atingido. Tente novamente em cerca de 1 hora."
+          ? "Limite de envios da demonstração atingido. Tente novamente em cerca de 1 hora."
           : "Não foi possível enviar o link. Aguarde alguns minutos e tente novamente.",
     };
   }
