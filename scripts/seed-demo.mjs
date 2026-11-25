@@ -119,11 +119,48 @@ function criarPdf(titulo) {
   return pdf;
 }
 
-const login = await fetch(`${URL_BASE}/auth/v1/token?grant_type=password`, {
-  method: "POST",
-  headers: { apikey: CHAVE, "Content-Type": "application/json" },
-  body: JSON.stringify({ email: DEMO_ADMIN_EMAIL, password: DEMO_ADMIN_SENHA }),
-});
+// O Supabase às vezes fica instável por alguns instantes: em 24 e 25/11/2026 a Cloudflare respondeu HTTP 522
+// depois de ~20 s sem conseguir conectar ao servidor. Repetimos a requisição com espera crescente antes de
+// desistir. O 522 quer dizer que a requisição não chegou ao servidor, então pode ser repetida em qualquer
+// método; os outros erros 5xx e as falhas de rede só são repetidos em leitura, exclusão e no login, para não
+// duplicar um cadastro que o servidor tenha gravado sem conseguir responder.
+const ESPERAS_MS = [5_000, 15_000, 30_000];
+
+const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms));
+
+async function requisitar(url, opcoes = {}, { repetivel = false } = {}) {
+  const metodo = opcoes.method ?? "GET";
+  const seguroRepetir = repetivel || metodo === "GET" || metodo === "DELETE";
+  const rotulo = `${metodo} ${new URL(url).pathname}`;
+  for (let tentativa = 0; ; tentativa++) {
+    const espera = ESPERAS_MS[tentativa];
+    let resposta;
+    try {
+      resposta = await fetch(url, opcoes);
+    } catch (erro) {
+      if (!seguroRepetir || espera === undefined) throw erro;
+      const motivo = erro.cause?.code ?? erro.message;
+      console.warn(`${rotulo}: falha de rede (${motivo}); nova tentativa em ${espera / 1000} s`);
+      await esperar(espera);
+      continue;
+    }
+    const repetir = resposta.status === 522 || (seguroRepetir && resposta.status >= 500);
+    if (!repetir || espera === undefined) return resposta;
+    await resposta.body?.cancel();
+    console.warn(`${rotulo}: HTTP ${resposta.status}; nova tentativa em ${espera / 1000} s`);
+    await esperar(espera);
+  }
+}
+
+const login = await requisitar(
+  `${URL_BASE}/auth/v1/token?grant_type=password`,
+  {
+    method: "POST",
+    headers: { apikey: CHAVE, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: DEMO_ADMIN_EMAIL, password: DEMO_ADMIN_SENHA }),
+  },
+  { repetivel: true },
+);
 
 if (!login.ok) {
   console.error(`Não foi possível entrar como administrador (HTTP ${login.status}).`);
@@ -134,7 +171,7 @@ const { access_token: token } = await login.json();
 const cabecalhos = { apikey: CHAVE, Authorization: `Bearer ${token}` };
 
 async function banco(caminho, metodo = "GET", corpo) {
-  const resposta = await fetch(`${URL_BASE}/rest/v1/${caminho}`, {
+  const resposta = await requisitar(`${URL_BASE}/rest/v1/${caminho}`, {
     method: metodo,
     headers: {
       ...cabecalhos,
@@ -150,7 +187,7 @@ async function banco(caminho, metodo = "GET", corpo) {
 }
 
 const arquivo = (caminho, opcoes) =>
-  fetch(`${URL_BASE}/storage/v1/object/exames/${caminho}`, {
+  requisitar(`${URL_BASE}/storage/v1/object/exames/${caminho}`, {
     ...opcoes,
     headers: { ...cabecalhos, ...opcoes.headers },
   });
